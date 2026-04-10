@@ -21,3 +21,4 @@ chess_model_pure.pth - 학습된 CNN 가중치 파일
 stockfish-windows-x86-64.exe - Stockfish 체스 엔진 실행 파일
 images/ - 기물 이미지 12개 (tkinter GUI용)
 ai_games.pgn - AI 자동 대국으로 수집된 기보 데이터
+core/__pycache__/ - Python 컴파일 캐시 (자동 생성)
