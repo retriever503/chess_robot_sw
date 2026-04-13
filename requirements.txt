@@ -4,3 +4,4 @@ streamlit
 python-chess
 Pillow
 tqdm
+chess
