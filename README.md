@@ -1,4 +1,4 @@
-## CHESS_ROBOT_SW
+# CHESS_ROBOT_SW
 ![chess_robot_SW_architecture.svg](https://github.com/retriever503/tobot_chess/blob/main/chess_robot_SW_architecture.svg)
 
 ## 실행 파일 5개
@@ -12,10 +12,7 @@
 
 ⑤ chess_dataset.py — Stockfish 자체 대국으로 PGN 기보를 수집하는 스크립트입니다. 무승부는 버리고 승패가 결정된 게임만 저장합니다.
 
-
-
-
-
+---
 ## core/ 패키지 6개 모듈
 ① engine.py — Stockfish 엔진 로딩을 중앙 관리합니다. OS별(Windows/Mac/Linux) 경로를 자동 감지하고, create_engine()으로 Elo 설정까지 한 번에 처리합니다.
 
