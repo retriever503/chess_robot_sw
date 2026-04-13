@@ -1,5 +1,5 @@
 # CHESS_ROBOT_SW
-![chess_robot_SW_architecture.svg](https://github.com/retriever503/tobot_chess/blob/main/chess_robot_SW_architecture.svg)
+![chess_robot_SW_architecture.svg](https://github.com/retriever503/chess_robot_sw/raw/main/chess_robot_SW_architecture.svg)
 
 ## 실행 파일 5개
 ① app.py — Streamlit 웹 앱. 체스판 사진을 업로드하면 CNN이 각 칸의 기물을 인식하고, FEN 문자열을 생성한 뒤, Stockfish가 다음 최선의 수를 추천해주며 subprocess로 Stockfish와 직접 통신하는 방식을 써서 Streamlit의 asyncio 충돌을 피했습니다.
