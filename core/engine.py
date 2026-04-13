@@ -5,12 +5,16 @@ Stockfish 엔진 로딩과 경로 설정을 한 곳에서 관리합니다.
 """
 
 import sys
+import os
 import platform
 import chess.engine
 
 # ── 경로 설정 ──────────────────────────────────────────────────────────────
 def _default_stockfish_path() -> str:
-    """OS에 맞는 기본 Stockfish 실행 파일 경로를 반환합니다."""
+    """환경변수 → OS별 기본값 순서로 Stockfish 실행 파일 경로를 반환합니다."""
+    env_path = os.environ.get("STOCKFISH_PATH")
+    if env_path:
+        return env_path
     if platform.system() == "Windows":
         return "stockfish-windows-x86-64.exe"
     elif platform.system() == "Darwin":   # macOS

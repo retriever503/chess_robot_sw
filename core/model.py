@@ -30,6 +30,7 @@ class ChessPieceCNN(nn.Module):
         )
         self.fc_layers = nn.Sequential(
             nn.Linear(128, 64), nn.ReLU(),
+            nn.Dropout(0.3),
             nn.Linear(64, 13),
         )
 
@@ -48,6 +49,15 @@ TRANSFORM = transforms.Compose([
 ])
 
 
+# ── 디바이스 자동 감지 ───────────────────────────────────────────────────
+
+def _auto_device() -> torch.device:
+    """CUDA → CPU 순서로 사용 가능한 디바이스를 자동 선택합니다."""
+    if torch.cuda.is_available():
+        return torch.device("cuda")
+    return torch.device("cpu")
+
+
 # ── 모델 로딩 ─────────────────────────────────────────────────────────────
 
 def load_model(model_path: str, device: torch.device | None = None) -> tuple[ChessPieceCNN, torch.device]:
@@ -57,17 +67,17 @@ def load_model(model_path: str, device: torch.device | None = None) -> tuple[Che
     Parameters
     ----------
     model_path : .pth 파일 경로
-    device     : None이면 CPU 자동 선택
+    device     : None이면 자동 감지 (CUDA → CPU)
 
     Returns
     -------
     (model, device)
     """
     if device is None:
-        device = torch.device("cpu")
+        device = _auto_device()
 
     model = ChessPieceCNN().to(device)
-    model.load_state_dict(torch.load(model_path, map_location=device))
+    model.load_state_dict(torch.load(model_path, map_location=device, weights_only=True))
     model.eval()
     return model, device
 
@@ -80,7 +90,7 @@ def predict_labels(
     device: torch.device,
 ) -> list[int]:
     """
-    체스판 전체 이미지를 64칸으로 잘라 각 칸의 기물 레이블을 반환합니다.
+    체스판 전체 이미지를 64칸으로 잘라 배치 추론으로 기물 레이블을 반환합니다.
 
     Parameters
     ----------
@@ -94,18 +104,19 @@ def predict_labels(
     """
     w, h = image.size
     sw, sh = w // 8, h // 8
-    predicted = []
+    tensors = []
 
     for row in range(8):
         for col in range(8):
             crop = image.crop((col * sw, row * sh, (col + 1) * sw, (row + 1) * sh))
-            tensor = TRANSFORM(crop).unsqueeze(0).to(device)
-            with torch.no_grad():
-                output = model(tensor)
-                label = torch.argmax(output, dim=1).item()
-            predicted.append(label)
+            tensors.append(TRANSFORM(crop))
 
-    return predicted
+    batch = torch.stack(tensors).to(device)
+    with torch.no_grad():
+        outputs = model(batch)
+        labels = torch.argmax(outputs, dim=1).tolist()
+
+    return labels
 
 
 def labels_to_pieces(labels: list[int]) -> list[str]:

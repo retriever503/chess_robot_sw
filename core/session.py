@@ -112,7 +112,7 @@ class GameSession:
 
     white: PlayerType = PlayerType.AI
     black: PlayerType = PlayerType.AI
-    engine_path: str = None
+    engine_path: str | None = None
     elo: int = 2850
 
     on_hw_command:   Callable[[dict], None] = field(default=None, repr=False)

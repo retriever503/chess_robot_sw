@@ -199,20 +199,70 @@ class HumanVsAIChessGUI:
             if piece and piece.color == self.player_color:
                 self.selected_square = square
         else:
-            move = next((m for m in self.board.legal_moves
-                         if m.from_square == self.selected_square and m.to_square == square), None)
-            if move:
-                self.board.push(move)
-                self.selected_square = None
-                self.hint_move = None
-                self._update_evaluation()
-                self._draw_all()
-                if not self.board.is_game_over():
-                    self.is_ai_thinking = True
-                    self.root.after(100, self._engine_move)
-            else:
+            # 이 출발/도착 칸에 해당하는 합법 수 목록 수집
+            candidates = [m for m in self.board.legal_moves
+                          if m.from_square == self.selected_square and m.to_square == square]
+
+            if not candidates:
                 self.selected_square = square if (piece and piece.color == self.player_color) else None
+            elif len(candidates) > 1:
+                # 프로모션: 여러 후보(q, r, b, n)가 존재 → 사용자 선택
+                move = self._ask_promotion(candidates)
+                if move:
+                    self._push_player_move(move)
+            else:
+                self._push_player_move(candidates[0])
         self._draw_all()
+
+    def _ask_promotion(self, candidates: list) -> chess.Move | None:
+        """프로모션 기물 선택 다이얼로그를 표시하고 선택된 수를 반환합니다."""
+        piece_names = {chess.QUEEN: "퀸(Q)", chess.ROOK: "룩(R)",
+                       chess.BISHOP: "비숍(B)", chess.KNIGHT: "나이트(N)"}
+        # 후보 수에서 프로모션 기물 추출
+        promo_map = {}
+        for m in candidates:
+            if m.promotion and m.promotion in piece_names:
+                promo_map[piece_names[m.promotion]] = m
+
+        if not promo_map:
+            return candidates[0]
+
+        # 간단한 선택 다이얼로그
+        top = tk.Toplevel(self.root)
+        top.title("프로모션 선택")
+        top.grab_set()
+        top.resizable(False, False)
+
+        selected_move = [None]
+        tk.Label(top, text="프로모션 기물을 선택하세요:", font=("Arial", 11, "bold"), pady=10).pack()
+
+        for name, move in promo_map.items():
+            def make_cmd(m=move):
+                def cmd():
+                    selected_move[0] = m
+                    top.destroy()
+                return cmd
+            tk.Button(top, text=name, width=15, font=("Arial", 10), command=make_cmd()).pack(pady=3, padx=20)
+
+        # 다이얼로그 가운데 정렬
+        top.update_idletasks()
+        x = self.root.winfo_x() + (self.root.winfo_width() - top.winfo_width()) // 2
+        y = self.root.winfo_y() + (self.root.winfo_height() - top.winfo_height()) // 2
+        top.geometry(f"+{x}+{y}")
+
+        self.root.wait_window(top)
+        return selected_move[0]
+
+    def _push_player_move(self, move: chess.Move):
+        """사람의 수를 보드에 적용하고 AI 턴으로 전환합니다."""
+        self.board.push(move)
+        self.selected_square = None
+        self.hint_move = None
+        self._update_evaluation()
+        self._draw_all()
+        if not self.board.is_game_over():
+            self.is_ai_thinking = True
+            self.root.after(100, self._engine_move)
 
     # ── 엔진 수 ───────────────────────────────────────────────────────────
 
@@ -309,7 +359,7 @@ class HumanVsAIChessGUI:
                 self.evaluation = 1.0 if info["score"].white().mate() > 0 else 0.0
             else:
                 self.evaluation = 1 / (1 + math.exp(-score / 300))
-        except:
+        except (chess.engine.EngineTerminatedError, KeyError, TypeError):
             pass
 
     # ── 종료 ──────────────────────────────────────────────────────────────

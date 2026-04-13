@@ -13,6 +13,8 @@ core/ 패키지의 ChessPieceCNN을 사용합니다.
 
 import os
 import sys
+import random
+import argparse
 import torch
 import torch.nn as nn
 import torch.optim as optim
@@ -22,7 +24,8 @@ from PIL import Image
 from tqdm import tqdm
 from collections import Counter, defaultdict
 
-from core import ChessPieceCNN, PIECE_TO_LABEL
+from core import ChessPieceCNN, PIECE_TO_LABEL, LABEL_TO_PIECE
+from core.model import TRANSFORM  # 추론용 전처리 (core와 동일하게 유지)
 
 try:
     import intel_extension_for_pytorch as ipex
@@ -32,24 +35,12 @@ except ImportError:
 
 # ── 설정 ──────────────────────────────────────────────────────────────────
 
-DATA_PATH   = r"C:\Users\user\Desktop\tobot_chess\archive\dataset\train"
 MODEL_SAVE  = "chess_model_pure.pth"
 BATCH_SIZE  = 64       # Arc GPU면 64 권장
 EPOCHS      = 20
 LR          = 3e-4     # Adam + Cosine 조합에 맞는 초기 lr
 VAL_SPLIT   = 0.1      # 학습 데이터의 10%를 검증용으로
 EARLY_STOP  = 5        # val_loss 개선 없으면 5에포크 후 중단
-
-LABEL_TO_PIECE = {0:'P',1:'N',2:'B',3:'R',4:'Q',5:'K',
-                  6:'p',7:'n',8:'b',9:'r',10:'q',11:'k',12:'.'}
-
-# ── 전처리 (학습/추론 동일하게 유지) ──────────────────────────────────────
-
-TRANSFORM = transforms.Compose([
-    transforms.Resize((50, 50)),
-    transforms.ToTensor(),
-    transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5)),
-])
 
 # 학습 시 데이터 증강 (과적합 방지)
 TRANSFORM_TRAIN = transforms.Compose([
@@ -134,7 +125,7 @@ def make_weighted_sampler(dataset: ChessDataset) -> WeightedRandomSampler:
 
 # ── 학습 ──────────────────────────────────────────────────────────────────
 
-def train():
+def train(data_path: str):
     # 디바이스 선택 (Intel Arc → NVIDIA → CPU 순서로 자동 감지)
     if HAS_IPEX and torch.xpu.is_available():
         device = torch.device("xpu")
@@ -150,11 +141,10 @@ def train():
         print("⚠️  CPU 학습 (느릴 수 있음)")
 
     # 파일 목록 로드
-    all_files = [f for f in os.listdir(DATA_PATH) if f.lower().endswith((".jpeg", ".jpg", ".png"))]
+    all_files = [f for f in os.listdir(data_path) if f.lower().endswith((".jpeg", ".jpg", ".png"))]
     print(f"📂 전체 이미지: {len(all_files):,}장")
 
     # train / val 분리
-    import random
     random.seed(42)
     random.shuffle(all_files)
     val_size = int(len(all_files) * VAL_SPLIT)
@@ -162,8 +152,8 @@ def train():
     train_files = all_files[val_size:]
     print(f"   학습: {len(train_files):,}장 / 검증: {len(val_files):,}장")
 
-    train_dataset = ChessDataset(train_files, DATA_PATH, transform=TRANSFORM_TRAIN)
-    val_dataset   = ChessDataset(val_files,   DATA_PATH, transform=TRANSFORM)
+    train_dataset = ChessDataset(train_files, data_path, transform=TRANSFORM_TRAIN)
+    val_dataset   = ChessDataset(val_files,   data_path, transform=TRANSFORM)
 
     # 클래스 분포 출력
     label_cnt = Counter(train_dataset.all_labels)
@@ -186,7 +176,7 @@ def train():
     # 기존 모델 이어받기 (파인튜닝)
     if os.path.exists(MODEL_SAVE):
         try:
-            model.load_state_dict(torch.load(MODEL_SAVE, map_location=device))
+            model.load_state_dict(torch.load(MODEL_SAVE, map_location=device, weights_only=True))
             print(f"📥 기존 모델 로드 완료 → 파인튜닝 모드")
         except Exception as e:
             print(f"⚠️  기존 모델 로드 실패 ({e}) → 처음부터 학습")
@@ -202,7 +192,7 @@ def train():
         print("✅ AMP(자동 혼합 정밀도) 적용 (NVIDIA)")
 
     # AMP scaler (NVIDIA 전용)
-    scaler = torch.cuda.amp.GradScaler() if use_amp else None
+    scaler = torch.amp.GradScaler("cuda") if use_amp else None
 
     # 학습 루프
     print(f"\n🚀 학습 시작 (epochs={EPOCHS}, batch={BATCH_SIZE}, lr={LR})\n")
@@ -218,9 +208,19 @@ def train():
             images = images.view(-1, 3, 50, 50).to(device)
             labels = labels.view(-1).to(device)
             optimizer.zero_grad()
-            loss = criterion(model(images), labels)
-            loss.backward()
-            optimizer.step()
+
+            # AMP 적용: NVIDIA GPU일 때 자동 혼합 정밀도 사용
+            with torch.amp.autocast("cuda", enabled=use_amp):
+                loss = criterion(model(images), labels)
+
+            if scaler:
+                scaler.scale(loss).backward()
+                scaler.step(optimizer)
+                scaler.update()
+            else:
+                loss.backward()
+                optimizer.step()
+
             train_loss += loss.item()
             loop.set_postfix(loss=f"{loss.item():.4f}")
         train_loss /= len(train_loader)
@@ -276,4 +276,7 @@ def train():
 
 
 if __name__ == "__main__":
-    train()
+    parser = argparse.ArgumentParser(description="체스 기물 CNN 학습")
+    parser.add_argument("--data", required=True, help="학습 데이터 경로 (이미지 폴더)")
+    args = parser.parse_args()
+    train(args.data)
