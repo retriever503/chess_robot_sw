@@ -1,7 +1,3 @@
-<p align=center>
-<img src="https://github.com/user-attachments/assets/6f2dd264-8498-43c9-bf1f-ef2254fd9790">
-</p>
-
 실행 파일
 app.py - Streamlit 체스판 분석기 - 이미지를 업로드하면 CNN을 인식해 Stockfish가 다음 수를 추천
 ai_chess.py - AI vs AI 자동 대국 GUI (tkinter)
