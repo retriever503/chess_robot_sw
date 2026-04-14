@@ -129,10 +129,10 @@ def make_weighted_sampler(dataset: ChessDataset) -> WeightedRandomSampler:
 # ── 학습 ──────────────────────────────────────────────────────────────────
 
 def train(data_path: str):
-    # 디바이스 선택 (Intel Arc → NVIDIA → CPU 순서로 자동 감지)
-    if HAS_IPEX and torch.xpu.is_available():
+    # 디바이스 선택 (Intel Arc XPU → NVIDIA CUDA → CPU 순서로 자동 감지)
+    if hasattr(torch, "xpu") and torch.xpu.is_available():
         device = torch.device("xpu")
-        use_amp = False   # IPEX는 자체 최적화 사용
+        use_amp = False
         print(f"✅ Intel Arc GPU: {torch.xpu.get_device_name(0)}")
     elif torch.cuda.is_available():
         device = torch.device("cuda")
@@ -191,6 +191,8 @@ def train(data_path: str):
     if HAS_IPEX and device.type == "xpu":
         model, optimizer = ipex.optimize(model, optimizer=optimizer)
         print("✅ IPEX 최적화 적용 (Intel Arc)")
+    elif device.type == "xpu":
+        print("✅ Intel Arc XPU (네이티브 PyTorch)")
     elif device.type == "cuda":
         print("✅ AMP(자동 혼합 정밀도) 적용 (NVIDIA)")
 
