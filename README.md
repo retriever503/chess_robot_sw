@@ -12,7 +12,7 @@
 - **Stockfish 연동**: 인식된 포지션에서 최선의 수를 실시간 추천
 - **사람 vs AI 대국**: 난이도 조절(Elo 1350~2850), 힌트, 무르기, 프로모션 선택 지원
 - **로봇 하드웨어 인터페이스**: JSON 기반 SW↔HW 통신 규격, FSM 세션 관리
-- **멀티 GPU 학습**: Intel Arc(IPEX) / NVIDIA(CUDA+AMP) / CPU 자동 감지
+- **멀티 GPU 학습**: Intel Arc(네이티브 XPU) / NVIDIA(CUDA+AMP) / CPU 자동 감지
 
 ---
 
@@ -94,7 +94,7 @@ chess_robot_sw/
 
 ③ **ai_human_chess.py** — 사람 vs AI 대국 GUI입니다. 난이도 슬라이더(Elo 1350~2850), 힌트 보기, 무르기, 기권 기능이 있고, AI가 형세 -600 이하로 떨어지면 스스로 항복하는 로직도 들어있습니다. 흑/백 선택 후 보드를 뒤집어 그려줍니다. 프로모션 시 기물 선택 다이얼로그를 제공합니다.
 
-④ **train.py** — CNN 기물 인식 모델 학습 스크립트입니다. WeightedRandomSampler로 빈칸(약 80%) 과다 문제를 해결하고, CosineAnnealingLR 스케줄러와 Early Stopping을 적용했습니다. Intel Arc(IPEX), NVIDIA(CUDA+AMP), CPU 순으로 디바이스를 자동 감지합니다.
+④ **train.py** — CNN 기물 인식 모델 학습 스크립트입니다. WeightedRandomSampler로 빈칸(약 80%) 과다 문제를 해결하고, CosineAnnealingLR 스케줄러와 Early Stopping을 적용했습니다. 데이터 증강(회전, 원근 왜곡, 블러)으로 실제 환경 내성을 높였습니다. Intel Arc(네이티브 XPU), NVIDIA(CUDA+AMP), CPU 순으로 디바이스를 자동 감지합니다.
 
 ⑤ **chess_dataset.py** — Stockfish 자체 대국으로 PGN 기보를 수집하는 스크립트입니다. 무승부는 버리고 승패가 결정된 게임만 저장합니다. 무승부가 연속되면 최대 재시도 횟수를 두어 무한 루프를 방지합니다.
 
@@ -108,7 +108,7 @@ chess_robot_sw/
 
 ③ **fen.py** — CNN 예측 결과(64개 레이블 배열)를 완전한 FEN 문자열로 변환합니다. 턴, 캐슬링(킹/룩 초기위치 기반 자동 추론), 앙파상까지 복원하며, FEN 유효성 검사도 담당합니다.
 
-④ **model.py** — ChessPieceCNN 클래스를 정의합니다. Conv2d 3층 + FC 2층 + Dropout 구조로, 50x50 RGB 이미지를 입력받아 13클래스(백 6종 + 흑 6종 + 빈칸)를 분류합니다. 64칸 배치 추론으로 빠르게 처리합니다.
+④ **model.py** — ChessPieceCNN 클래스를 정의합니다. Conv2d 3층 + FC 2층 구조로, 50x50 RGB 이미지를 입력받아 13클래스(백 6종 + 흑 6종 + 빈칸)를 분류합니다. 64칸 배치 추론으로 빠르게 처리합니다.
 
 ⑤ **interface.py** — 로봇 하드웨어와 소프트웨어 간 JSON 메시지 규격을 정의합니다. GameState(보드 상태), MoveCommand(로봇 이동 지시), RobotResult(실행 결과), SafetyEvent(비상정지) 4가지 메시지 타입을 dataclass로 구현했고, 캐슬링/앙파상/프로모션 등 수 종류를 자동 판별합니다.
 
@@ -125,7 +125,7 @@ chess_robot_sw/
 | 웹 | Streamlit |
 | GUI | tkinter, Pillow |
 | 하드웨어 인터페이스 | JSON 메시지, dataclass, FSM |
-| GPU 지원 | NVIDIA CUDA (AMP), Intel Arc (IPEX) |
+| GPU 지원 | NVIDIA CUDA (AMP), Intel Arc (네이티브 XPU) |
 
 ---
 
@@ -136,4 +136,4 @@ chess_robot_sw/
 - 체스판 사진 업로드 → CNN이 64칸 기물 인식 → FEN 생성 → Stockfish가 최선의 수 추천
 - 난이도 조절(Elo 1350~2850), 힌트, 무르기, 기권을 지원하는 사람 vs AI 대국 GUI
 - FSM 기반 대국 세션 관리자로 로봇 하드웨어와 연동
-- 멀티 GPU 학습 지원: Intel Arc (IPEX), NVIDIA (CUDA+AMP), CPU 자동 감지
+- 멀티 GPU 학습 지원: Intel Arc (네이티브 XPU), NVIDIA (CUDA+AMP), CPU 자동 감지
