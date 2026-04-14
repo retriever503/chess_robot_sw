@@ -42,11 +42,14 @@ LR          = 3e-4     # Adam + Cosine 조합에 맞는 초기 lr
 VAL_SPLIT   = 0.1      # 학습 데이터의 10%를 검증용으로
 EARLY_STOP  = 5        # val_loss 개선 없으면 5에포크 후 중단
 
-# 학습 시 데이터 증강 (과적합 방지)
+# 학습 시 데이터 증강 (과적합 방지 + 실제 환경 시뮬레이션)
 TRANSFORM_TRAIN = transforms.Compose([
     transforms.Resize((50, 50)),
     transforms.RandomHorizontalFlip(p=0.1),   # 체스판 특성상 과도한 flip은 금지
     transforms.ColorJitter(brightness=0.3, contrast=0.3, saturation=0.2),
+    transforms.RandomRotation(degrees=5),                          # 카메라 기울어짐
+    transforms.RandomPerspective(distortion_scale=0.1, p=0.3),    # 원근 왜곡
+    transforms.GaussianBlur(kernel_size=3, sigma=(0.1, 1.0)),     # 초점 흐림
     transforms.ToTensor(),
     transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5)),
 ])
