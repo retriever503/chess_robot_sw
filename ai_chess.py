@@ -30,6 +30,23 @@ class AutoChessGUI:
             messagebox.showerror("엔진 오류", str(e))
             sys.exit()
 
+        # ── 난이도 설정 UI ─────────────────────────────────────────────────
+        self.top_frame = tk.Frame(self.root, bg="#f0f0f0", pady=8)
+        self.top_frame.pack(fill=tk.X, padx=10)
+
+        diff_frame = tk.Frame(self.top_frame, bg="#f0f0f0")
+        diff_frame.pack(fill=tk.X)
+        tk.Label(diff_frame, text="AI 난이도:", bg="#f0f0f0", font=("Arial", 9, "bold")).pack(side=tk.LEFT)
+        self.difficulty_scale = tk.Scale(
+            diff_frame, from_=1350, to_=2850, orient=tk.HORIZONTAL,
+            length=150, command=self._on_difficulty_change, bg="#f0f0f0", highlightthickness=0
+        )
+        self.difficulty_scale.set(2850)
+        self.difficulty_scale.pack(side=tk.LEFT, padx=10)
+        self.diff_label = tk.Label(diff_frame, text="고수", fg="#c62828", bg="#f0f0f0")
+        self.diff_label.pack(side=tk.LEFT)
+
+        # ── 체스판 ────────────────────────────────────────────────────────
         self.canvas = tk.Canvas(self.root, width=SQUARE_SIZE * 8, height=SQUARE_SIZE * 8)
         self.canvas.pack()
 
@@ -41,7 +58,20 @@ class AutoChessGUI:
         self.selected_square = None
 
         self.start_btn = tk.Button(self.root, text="AI 대결 시작", command=self._start_ai_vs_ai)
-        self.start_btn.pack()
+        self.start_btn.pack(pady=5)
+
+    # ── 난이도 조절 ──────────────────────────────────────────────────────
+
+    def _on_difficulty_change(self, val):
+        elo = int(val)
+        if self.engine:
+            self.engine.configure({"UCI_LimitStrength": True, "UCI_Elo": elo})
+        if elo < 1800:
+            self.diff_label.config(text="초급자", fg="#2e7d32")
+        elif elo < 2300:
+            self.diff_label.config(text="중급자", fg="#1565c0")
+        else:
+            self.diff_label.config(text="고수", fg="#c62828")
 
     def _load_images(self):
         for char, name in PIECE_SYMBOLS.items():
