@@ -36,7 +36,7 @@ except ImportError:
 # ── 설정 ──────────────────────────────────────────────────────────────────
 
 MODEL_SAVE  = "chess_model_pure.pth"
-BATCH_SIZE  = 128
+BATCH_SIZE  = 64
 EPOCHS      = 20
 LR          = 3e-4     # Adam + Cosine 조합에 맞는 초기 lr
 VAL_SPLIT   = 0.1      # 학습 데이터의 10%를 검증용으로
