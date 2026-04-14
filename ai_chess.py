@@ -111,11 +111,11 @@ class AutoChessGUI:
                 self._handle_end_game()
             return
         try:
-            result = self.engine.play(self.board, chess.engine.Limit(time=0.05))
+            result = self.engine.play(self.board, chess.engine.Limit(time=0.5))
             if result.move:
                 self.board.push(result.move)
                 self._draw_board()
-                self.root.after(300, self._play_auto_move)
+                self.root.after(1500, self._play_auto_move)
         except (chess.engine.EngineTerminatedError, RuntimeError):
             pass
 
