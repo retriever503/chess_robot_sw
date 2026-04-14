@@ -4,7 +4,6 @@ Stockfish 엔진 로딩과 경로 설정을 한 곳에서 관리합니다.
 모든 GUI·앱 파일은 여기서 엔진을 가져다 씁니다.
 """
 
-import sys
 import os
 import platform
 import chess.engine

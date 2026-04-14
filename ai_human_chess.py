@@ -3,7 +3,6 @@ ai_human_chess.py  ―  사람 vs AI GUI
 core/ 패키지로 공통 로직을 분리한 버전
 """
 
-import sys
 import math
 import tkinter as tk
 from tkinter import messagebox

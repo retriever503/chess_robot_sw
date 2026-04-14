@@ -12,7 +12,6 @@ core/ 패키지의 ChessPieceCNN을 사용합니다.
 """
 
 import os
-import sys
 import random
 import argparse
 import torch
