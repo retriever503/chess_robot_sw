@@ -116,6 +116,26 @@ chess_robot_sw/
 
 ---
 
+## CNN 모델 구조
+
+```
+입력: 50×50 RGB 이미지 (체스판 한 칸)
+  ↓
+Conv2d(3→32) → ReLU → MaxPool
+Conv2d(32→64) → ReLU → MaxPool
+Conv2d(64→128) → ReLU → AdaptiveAvgPool
+  ↓
+Linear(128→64) → ReLU
+Linear(64→13)
+  ↓
+출력: 13클래스 (백 6종 + 흑 6종 + 빈칸)
+```
+
+- 파라미터: 102,349개 (경량 설계)
+- 검증 정확도: 99.9% (82,000장 학습 기준)
+
+---
+
 ## 기술 스택
 
 | 분야 | 기술 |
