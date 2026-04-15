@@ -96,7 +96,7 @@ chess_robot_sw/
 
 ④ **train.py** — CNN 기물 인식 모델 학습 스크립트입니다. WeightedRandomSampler로 빈칸(약 80%) 과다 문제를 해결하고, CosineAnnealingLR 스케줄러와 Early Stopping을 적용했습니다. 데이터 증강(회전, 원근 왜곡, 블러)으로 실제 환경 내성을 높였습니다. Intel Arc(네이티브 XPU), NVIDIA(CUDA+AMP), CPU 순으로 디바이스를 자동 감지합니다.
 
-⑤ **chess_dataset.py** — Stockfish 자체 대국으로 PGN 기보를 수집하는 스크립트입니다. 무승부는 버리고 승패가 결정된 게임만 저장합니다. 무승부가 연속되면 최대 재시도 횟수를 두어 무한 루프를 방지합니다.
+⑤ **chess_dataset.py** — Stockfish 자체 대국으로 PGN 기보를 수집하는 스크립트입니다. 무승부는 버리고 승패가 결정된 게임만 저장하며 무승부가 연속되면 최대 재시도 횟수를 두어 무한 루프를 방지합니다. 수집된 기보를 체스판 이미지로 변환하여 CNN 학습 데이터를 자체 생성할 수 있습니다. 현재는 Kaggle 데이터셋(80,000장)을 사용하고 있으며, 추가 데이터가 필요할 때 활용합니다.
 
 ---
 
