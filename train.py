@@ -39,7 +39,7 @@ BATCH_SIZE  = 64
 EPOCHS      = 20
 LR          = 3e-4     # Adam + Cosine 조합에 맞는 초기 lr
 VAL_SPLIT   = 0.1      # 학습 데이터의 10%를 검증용으로
-EARLY_STOP  = 5        # val_loss 개선 없으면 5에포크 후 중단
+EARLY_STOP  = 1        # val_loss 개선 없으면 1에포크 후 중단
 
 # 학습 시 데이터 증강 (과적합 방지)
 TRANSFORM_TRAIN = transforms.Compose([
