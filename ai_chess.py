@@ -23,6 +23,7 @@ class AutoChessGUI:
 
         self.board = chess.Board()
         self.is_running = True
+        self.is_playing = False
 
         try:
             self.engine = create_engine(elo=2850)
@@ -57,8 +58,10 @@ class AutoChessGUI:
         self.canvas.bind("<Button-1>", self._on_click)
         self.selected_square = None
 
-        self.start_btn = tk.Button(self.root, text="AI 대결 시작", command=self._start_ai_vs_ai)
-        self.start_btn.pack(pady=5)
+        btn_frame = tk.Frame(self.root)
+        btn_frame.pack(pady=5)
+        tk.Button(btn_frame, text="AI 대결 시작", command=self._start_ai_vs_ai, bg="#e1f5fe", width=12).pack(side=tk.LEFT, padx=5)
+        tk.Button(btn_frame, text="리셋", command=self._reset_game, bg="#fff9c4", width=12).pack(side=tk.LEFT, padx=5)
 
     # ── 난이도 조절 ──────────────────────────────────────────────────────
 
@@ -129,14 +132,21 @@ class AutoChessGUI:
             except chess.engine.EngineTerminatedError:
                 pass
 
+    def _reset_game(self):
+        """대국을 중단하고 보드를 초기 상태로 리셋합니다."""
+        self.is_playing = False
+        self.board.reset()
+        self.selected_square = None
+        self._draw_board()
+
     def _start_ai_vs_ai(self):
-        if self.board.is_game_over():
-            self.board.reset()
-            self._draw_board()
+        self.board.reset()
+        self._draw_board()
+        self.is_playing = True
         self._play_auto_move()
 
     def _play_auto_move(self):
-        if not self.is_running or self.board.is_game_over():
+        if not self.is_running or not self.is_playing or self.board.is_game_over():
             if self.is_running and self.board.is_game_over():
                 self._handle_end_game()
             return
